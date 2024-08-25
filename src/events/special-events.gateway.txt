@@ -1,0 +1,93 @@
+import {
+    ConnectedSocket,
+    MessageBody,
+    SubscribeMessage,
+    WebSocketGateway,
+    WebSocketServer,
+} from '@nestjs/websockets';
+import { Socket, Server } from 'socket.io';
+import { RoomsService } from 'src/rooms/rooms.service';
+import { UsersService } from 'src/users/users.service';
+import Client from 'ioredis';
+import Redlock from 'redlock';
+import { QueueService } from 'src/queue/queue.service';
+import { RedisService } from 'src/redis/redis.service';
+import { SpecialService } from 'src/special/special.service';
+
+@WebSocketGateway()
+export class SpecialEventsGateway {
+    @WebSocketServer()
+    server: Server;
+    redlock: Redlock;
+
+    constructor(
+        private readonly usersService: UsersService,
+        private readonly roomsService: RoomsService,
+        private readonly queueService: QueueService,
+        private readonly redisService: RedisService,
+        private readonly specialService: SpecialService,
+    ) {
+        const redisA = new Client({ host: 'localhost' });
+        this.redlock = new Redlock([redisA], {
+            driftFactor: 0.01,
+            retryCount: 10,
+            retryDelay: 200,
+            retryJitter: 100,
+            automaticExtensionThreshold: 500,
+        });
+
+        // this.startBatchProcessing();
+    }
+
+    @SubscribeMessage('specialTrivia')
+    async handleJoinSpecialTrivia(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { specialId: string },
+    ) {
+        const userId = client.handshake.query.userId as string;
+
+        if (!userId) {
+            console.log(
+                'Special Trivia: Player is not authenticated. Disconnecting client...',
+            );
+            client.disconnect();
+            return;
+        }
+
+        try {
+            const { specialId } = data;
+            const specialTrivia = await this.specialService.specialTrivia({ id: Number(specialId) });
+
+            if (!specialTrivia) {
+                client.emit('error', { message: 'Special trivia not found' });
+                return;
+            }
+
+            const specialRoom = await this.roomsService.createSpecialRoom(Number(specialId));
+
+            await this.roomsService.createSpecialPlayer({
+                user: { connect: { id: Number(userId) } },
+                room: { connect: { id: specialRoom.id } },
+                specialTrivia: { connect: { id: Number(specialId) } },
+                playerTime: 0
+            });
+
+            const participants = await this.roomsService.getSpecialPlayers(Number(specialId));
+
+            if (specialTrivia.playersPerRoom === 1 || participants.length >= specialTrivia.playersPerRoom) {
+                await this.roomsService.updateRoom({
+                    where: { id: specialRoom.id },
+                    data: { state: 'active' },
+                });
+
+                const newRoom = await this.roomsService.createSpecialRoom(Number(specialId));
+                this.server.emit('newSpecialRoom', { room: newRoom });
+            }
+
+            client.join(specialRoom.id.toString());
+            client.emit('joinedSpecialRoom', { roomId: specialRoom.id });
+        } catch (error) {
+            console.error('Error during join special trivia:', error);
+        }
+    }
+}

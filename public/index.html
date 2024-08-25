@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WebSocket Test</title>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h1>WebSocket Test</h1>
+    <div id="status">Status: Disconnected</div>
+    <div id="messages"></div>
+
+    <script>
+      const socket = io('http://192.168.43.135:3000');
+
+      socket.on('connect', () => {
+        document.getElementById('status').innerText = 'Status: Connected!';
+        console.log('Connected established with WebSocket server');
+
+        socket.emit('htmlMessage', { msg: 'Hello! I\'m connected!' });
+      });
+
+      socket.on('message', (message) => {
+        console.log('Received message:', message);
+        const messageDiv = document.createElement('div');
+        messageDiv.innerText = message;
+        document.getElementById('messages').appendChild(messageDiv);
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('status').innerText = 'Status: Disconnected!';
+        console.log('Disconnected from WebSocket server');
+      });
+    </script>
+  </body>
+</html>

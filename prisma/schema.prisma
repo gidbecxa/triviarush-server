@@ -1,0 +1,237 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+    id              Int             @id @default(autoincrement())
+    phoneNumber     String?         @unique
+    email           String?         @unique
+    username        String          @unique
+    topics          Json?
+    bio             String?
+    avatar          String?
+    skillLevel      PlayerLevel     @default(rookie)
+    points          Int             @default(1)
+    token           Float           @default(10)
+    location        Json?
+    isOnline        Boolean         @default(false)
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+//  emailVerified   Boolean         @default(false)
+    refreshToken    String?
+
+    rooms           RoomParticipant[]
+    specialPlays    SpecialPlayer[]
+    messages        Message[]
+    playerRewards   PlayerReward[]
+    responses       Response[]
+}
+
+model TriviaTopic {
+    id                  Int             @id @default(autoincrement())
+    title               String          @unique
+    slug                TopicsEnum      @unique
+    description		String?
+
+//  questions           Question[]
+}
+
+model Room {
+    id              Int             @id @default(autoincrement())
+    title           String
+    idempotencyId   String?
+    category        TopicsEnum      @default(general)
+    state           RoomState       @default(waiting)
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+
+    participants    RoomParticipant[]
+    messages        Message[]
+    responses       Response[]
+}
+
+model RoomParticipant {
+    id        Int      @id @default(autoincrement())
+    userId    Int
+    roomId    Int
+    joinedAt  DateTime @default(now())
+
+    user      User     @relation(fields: [userId], references: [id])
+    room      Room     @relation(fields: [roomId], references: [id])
+
+    @@unique([userId, roomId])
+}
+
+model TriviaSpecial {
+    id              Int             @id @default(autoincrement())
+    title           String
+    caption         String
+    description     String?         @db.Text
+    rewardId        Int             @default(1)
+    category        TopicsEnum      @default(all)
+    type            SpecialEnum     @default(DailyChallenge)
+    playersPerRoom  Int             @default(1)
+    avatar          String?
+    status          EventStatus     @default(upcoming)
+    questions       Json?
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+
+    reward          TriviaReward    @relation(fields: [rewardId], references: [id])
+    participants    SpecialPlayer[]
+    specialRooms    SpecialRoom[]
+}
+
+model SpecialRoom {
+    id              Int             @id @default(autoincrement())
+//  title           String
+    idempotencyId   String?
+    specialId       Int
+    state           RoomState       @default(waiting)
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+
+    participants    SpecialPlayer[]
+    specialTrivia   TriviaSpecial   @relation(fields: [specialId], references: [id])
+}
+
+model SpecialPlayer {
+    id              Int             @id @default(autoincrement())
+    userId          Int
+    roomId          Int
+    specialId       Int
+    playerTime      BigInt          // Time in milliseconds
+    joinedAt        DateTime @default(now())
+
+    user            User            @relation(fields: [userId], references: [id])
+    room            SpecialRoom     @relation(fields: [roomId], references: [id])
+    specialTrivia   TriviaSpecial   @relation(fields: [specialId], references: [id])
+
+    @@unique([userId, roomId])
+}
+
+model TriviaReward {
+    id              Int             @id @default(autoincrement())
+    title           String
+    avatar          String
+    quantity        Int             @default(1)
+
+    specialTrivias  TriviaSpecial[]
+    playerRewards   PlayerReward[]
+}
+
+model PlayerReward {
+    id              Int             @id @default(autoincrement())
+    userId          Int
+    rewardId        Int
+    isClaimed       Boolean         @default(false)
+    dateEarned      DateTime        @default(now())
+
+    user            User            @relation(fields: [userId], references: [id])
+    reward          TriviaReward    @relation(fields: [rewardId], references: [id])
+
+    @@unique([userId, rewardId])
+}
+
+model Question {
+    id                  Int            @id @default(autoincrement())
+    text                String
+    options             Json
+    answer              String
+    level               PlayerLevel    @default(rookie)
+    category            TopicsEnum     @default(all)
+
+    responses           Response[]
+}
+
+model Response {
+    id                  Int            @id @default(autoincrement())
+    roomId              Int
+    questionId          Int
+    userId              Int
+    score               Int            @default(0)
+    responseTime        Int            // Time in milliseconds
+//  fastestTimeScore    Int            @default(0)
+    createdAt           DateTime       @default(now())
+
+
+    room                Room           @relation(fields: [roomId], references: [id])
+    question            Question       @relation(fields: [questionId], references: [id])
+    user                User           @relation(fields: [userId], references: [id])
+
+    @@unique([roomId, questionId, userId])
+}
+
+model Message {
+    id              Int             @id @default(autoincrement())
+    clientId        String?         // Chat _id from client-side
+    userId          Int
+    roomId          Int
+    text            String          @db.Text
+    createdAt       DateTime        @default(now())
+    system          Boolean         @default(false)
+
+    user            User            @relation(fields: [userId], references: [id])
+    room            Room            @relation(fields: [roomId], references: [id])
+}
+
+enum PlayerLevel {
+    rookie
+    trivia_ace
+    expert
+    guru
+    mastermind
+    grand_trivia_maestro
+}
+
+enum RoomState {
+    waiting
+    active
+    ended
+}
+
+enum TopicsEnum {
+    all
+    animals
+    food
+    games
+    general
+    geography
+    history
+    maths
+    movies
+    music
+    riddles
+    science
+    sports
+    technology
+}
+
+enum SpecialEnum {
+    // Personal challenges
+    DailyChallenge
+    RaceAgainstTimeChallenge
+    WinRushCoinsTrivia
+    // Competitive
+    FastestTimeChallenge
+    // Multiplayer challenge
+    AllTopicsChallenge
+    WeeklyTriviaDraw
+}
+
+enum EventStatus {
+    upcoming
+    open
+    closed
+}
