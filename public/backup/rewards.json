@@ -1,0 +1,20 @@
+[
+	{
+		"id" : 1,
+		"title" : "Apple gift card",
+		"avatar" : "https://sfduajkkrvxrmrryoblz.supabase.co/storage/v1/object/public/trivia-images/Apple-gift-card-icon.jpg",
+		"quantity" : 3
+	},
+	{
+		"id" : 2,
+		"title" : "RushCoins",
+		"avatar" : "https://sfduajkkrvxrmrryoblz.supabase.co/storage/v1/object/public/trivia-images/RushCoins.jpeg",
+		"quantity" : 25
+	},
+	{
+		"id" : 3,
+		"title" : "Trivia Stars",
+		"avatar" : "https://sfduajkkrvxrmrryoblz.supabase.co/storage/v1/object/public/trivia-images/292699832_e865e597-4c6f-4b68-8fa5-8a10808559b5.jpg",
+		"quantity" : 25
+	}
+]

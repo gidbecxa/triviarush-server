@@ -8,8 +8,9 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { BasicUserProfile, UsersService } from './users.service';
 import { User, Prisma, PlayerLevel, TopicsEnum } from '@prisma/client';
 
 @Controller('users')
@@ -62,24 +63,23 @@ export class UsersController {
     });
   }
 
-  // Get users for a particular topic from the user with the highest points to the lowest
-  @Get('by-topic')
+  @Get('user/:id/game-pals')
   async getUsersByTopic(
-    @Query('topic') topic: TopicsEnum,
+    @Param('id') id: string,
     @Query('skip') skip?: number,
     @Query('take') take?: number,
     @Query('cursor') cursor?: Prisma.UserWhereUniqueInput,
-    // @Query('where') where?: Prisma.UserWhereInput,
     @Query('orderBy') orderBy?: Prisma.UserOrderByWithRelationInput,
-  ): Promise<User[]> {
-    console.log('Fetching users for topic:', topic);
-    return this.usersService.users({
-      skip,
-      take,
+  ): Promise<BasicUserProfile[]> {
+    console.log("Fetching players that match user's topics...");
+
+    return this.usersService.matchingUsers(
+      Number(id),
+      Number(skip),
+      Number(take),
       cursor,
-      where: { topics: { array_contains: topic } },
-      orderBy: orderBy ? orderBy : { points: 'desc' },
-    });
+      orderBy,
+    );
   }
 
   @Get('user/:id/waiting-rooms')

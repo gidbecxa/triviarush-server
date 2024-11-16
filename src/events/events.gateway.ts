@@ -74,9 +74,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Add user to the sockets map
       this.server.sockets.sockets.set(userId, client);
-
-      await this.iterateUserTopics(userId, client); // Get waiting rooms for the player
-      await this.fetchSpecialRooms(userId, client); // Get special trivias for the player
     } catch (err) {
       console.error('Error during connection handling:', err);
     }
@@ -95,6 +92,22 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Remove the client ID association with the user ID
       this.server.sockets.sockets.delete(userId);
     }
+  }
+
+  @SubscribeMessage('fetchRooms')
+  async fetcUserhRooms(@ConnectedSocket() client: Socket) {
+    const userId = client.handshake.query.userId as string;
+
+    if (!userId) {
+      console.log(
+        'Fetch Rooms: User is not authenticated. Disconnecting client...',
+      );
+      client.disconnect();
+      return;
+    }
+
+    await this.iterateUserTopics(userId, client); // Get waiting rooms for the player
+    await this.fetchSpecialRooms(userId, client); // Get special trivias for the player
   }
 
   async withRedlock(lockKey: string, timeout: number, fn: () => Promise<void>) {
@@ -261,11 +274,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async processResponseQueue() {
     const queueSize = this.queueService.getResponseQueueSize();
-    this.logger.log(`Process response queue. Size = ${queueSize}`);
+    // this.logger.log(`Process response queue. Size = ${queueSize}`);
 
     // Exit if the queue is empty to avoid unnecessary processing, log this behavior
     if (queueSize === 0) {
-      this.logger.log('No responses in queue to process.');
+      // this.logger.log('No responses in queue to process.');
       return;
     }
 
@@ -329,9 +342,9 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
           try {
             await this.responseService.createResponse({
-              user: { connect: { id: parseInt(response.userId) } },
-              room: { connect: { id: parseInt(response.roomId) } },
-              question: { connect: { id: parseInt(response.questionId) } },
+              user: { connect: { id: Number(response.userId) } },
+              room: { connect: { id: Number(response.roomId) } },
+              question: { connect: { id: Number(response.questionId) } },
               score: response.score,
               responseTime: response.responseTime,
             });
@@ -340,18 +353,27 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const scoreAndTimeStats = await this.responseService.getRoomStats(
               Number(response.roomId),
             );
+            // console.log('Fetched stats:', scoreAndTimeStats);
 
             // Send the user stats for each user
             if (client) {
               // Emit user-specific stats if client is connected
               const userStat = scoreAndTimeStats.find(
-                (stat) => stat.userId === response.userId,
+                (stat) => stat.userId === Number(response.userId),
               );
+              console.log("User's stats: ", userStat);
+
               if (userStat) {
                 client.emit('userStats', {
                   userId: userStat.userId,
                   score: userStat._sum.score,
                   responseTime: userStat._sum.responseTime,
+                });
+
+                // Update the user's score
+                await this.usersService.updateUser({
+                  where: { id: Number(userStat.userId) },
+                  data: { points: { increment: userStat._sum.score } },
                 });
               }
             } else {
@@ -557,6 +579,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private async iterateUserTopics(userId: string, client: Socket) {
+    console.log("Fetching room's for user's rooms...");
     const user = await this.usersService.user({ id: Number(userId) });
     if (user) {
       const topics =
@@ -564,6 +587,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (Array.isArray(topics)) {
         for (const topic of topics) {
+          console.log("User's topics found: ", topic);
           await this.createNewRoomIfNecessary(topic);
         }
         const waitingRooms = await this.usersService.getUserWaitingRooms(
@@ -603,7 +627,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
           text: 'Welcome to the room! Please follow the rules and enjoy your game. You can exchange greetings with other players before the game starts.',
           system: true,
           room: { connect: { id: waitingRoom[0].id } },
-          user: { connect: { id: 3 } },
+          user: { connect: { id: 1 } },
         });
       }
     });
@@ -696,7 +720,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             text: 'Welcome to the room! Please follow the rules and enjoy your game. You can exchange greetings with other players before the game starts.',
             system: true,
             room: { connect: { id: newRoom.id } },
-            user: { connect: { id: 3 } },
+            user: { connect: { id: 1 } },
             clientId: tempMessageId,
           });
 
@@ -709,6 +733,26 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await this.redisService.del(lockKey);
       }
     }
+  }
+
+  // Fisher-Yates shuffle algorithm
+  private shuffleArray(array: any[]) {
+    let currentIndex = array.length,
+      randomIndex: number;
+
+    while (currentIndex !== 0) {
+      //Pick a random element
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+
+      // And swap it with the current element.
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex],
+        array[currentIndex],
+      ];
+    }
+    console.log('Shuffled array:', array);
+    return array;
   }
 
   private async updateRoomStateWhenFull(roomId: string, participants: any[]) {
@@ -732,9 +776,17 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         10,
       );
 
+      // Apply the shuffle to the options
+      const questionsWithShuffledOptions = questions.map((question) => {
+        let optionsArray = JSON.parse(question.options as string);
+        optionsArray = this.shuffleArray(optionsArray);
+        question.options = JSON.stringify(optionsArray);
+        return question;
+      });
+
       this.server
         .to(this.getRoomLabel(roomId))
-        .emit('triviaQuestions', { questions });
+        .emit('triviaQuestions', { questions: questionsWithShuffledOptions });
     }
   }
 
@@ -746,7 +798,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private async fetchSpecialRooms(userId: string, client: Socket) {
     const specialTrivias = await this.specialService.specialTrivias({
       where: {
-        OR: [{ status: 'upcoming' }, { status: 'open' }],
+        OR: [{ gameStatus: 'upcoming' }, { gameStatus: 'open' }],
       },
       orderBy: { createdAt: 'desc' },
     });

@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { User, Prisma, Room, TopicsEnum } from '@prisma/client';
+import { User, Prisma, Room, TopicsEnum, PlayerLevel } from '@prisma/client';
+
+export type BasicUserProfile = {
+  id: number;
+  username: string;
+  topics: Prisma.JsonValue;
+  bio: string;
+  avatar: string;
+  skillLevel: PlayerLevel;
+};
 
 @Injectable()
 export class UsersService {
@@ -27,7 +36,7 @@ export class UsersService {
 
     // Fetch rooms that match the user's topics and are in 'waiting' state
     const topics = Array.isArray(user.topics) ? user.topics as TopicsEnum[] : [user.topics] as TopicsEnum[];
-    // const topics = user.topics as TopicsEnum[]
+    
     const waitingRooms = await this.prisma.room.findMany({
       where: {
         category: { in: topics },
@@ -58,6 +67,48 @@ export class UsersService {
       cursor,
       where,
       orderBy,
+    });
+  }
+
+  async matchingUsers(
+    userId: number,
+    skip?: number,
+    take?: number,
+    cursor?: Prisma.UserWhereUniqueInput,
+    orderBy?: Prisma.UserOrderByWithRelationInput,
+  ): Promise<BasicUserProfile[]> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { topics: true },
+    });
+
+    if (!user) {
+      throw new Error(`User not found`);
+    }
+
+    const topics = Array.isArray(user.topics) ? user.topics as TopicsEnum[] : [user.topics] as TopicsEnum[];
+
+    console.log('Match criteria, Topics: ', topics);
+
+    return this.prisma.user.findMany({
+      skip,
+      take,
+      cursor,
+      where: {
+        AND: [
+          { id: { not: userId } },
+          { topics: { array_contains: topics } },
+        ],
+      },
+      orderBy: orderBy ? orderBy : {points: 'desc'},
+      select: {
+        id: true,
+        username: true,
+        topics: true,
+        bio: true,
+        avatar: true,
+        skillLevel: true,
+      }
     });
   }
 

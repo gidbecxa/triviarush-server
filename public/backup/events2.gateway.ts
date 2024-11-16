@@ -668,7 +668,7 @@ import {
     private async fetchSpecialRooms(userId: string, client: Socket) {
       const specialTrivias = await this.specialService.specialTrivias({
         where: {
-          OR: [{ status: 'upcoming' }, { status: 'open' }],
+          OR: [{ gameStatus: 'upcoming' }, { gameStatus: 'open' }],
         },
         orderBy: { createdAt: 'desc' },
       });

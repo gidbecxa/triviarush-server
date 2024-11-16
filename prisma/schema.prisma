@@ -14,28 +14,35 @@ datasource db {
 }
 
 model User {
-    id              Int             @id @default(autoincrement())
-    phoneNumber     String?         @unique
-    email           String?         @unique
-    username        String          @unique
-    topics          Json?
-    bio             String?
-    avatar          String?
-    skillLevel      PlayerLevel     @default(rookie)
-    points          Int             @default(1)
-    token           Float           @default(10)
-    location        Json?
-    isOnline        Boolean         @default(false)
-    createdAt       DateTime        @default(now())
-    updatedAt       DateTime        @updatedAt
-//  emailVerified   Boolean         @default(false)
-    refreshToken    String?
+    id                          Int             @id @default(autoincrement())
+    phoneNumber                 String?         @unique
+    email                       String?         @unique
+    username                    String          @unique
+    topics                      Json?
+    bio                         String?
+    avatar                      String?
+    skillLevel                  PlayerLevel     @default(trivia_rookie)
+    points                      Int             @default(1)
+    coins                       Float           @default(10)
+    location                    Json?
+    isOnline                    Boolean         @default(false)
+    createdAt                   DateTime        @default(now())
+    updatedAt                   DateTime        @updatedAt
+//  emailVerified               Boolean         @default(false)
+    refreshToken                String?
+    numberOfWins                Int?
+    gamesPlayed                 Int             @default(1)
+    isLoggedIn                  Boolean         @default(false)
+    multipleDevicesAllowed      Boolean         @default(false)
+    twoFactorEnabled            Boolean         @default(false)
+    twoFactorCode               String?
+    settings                    Json?
 
-    rooms           RoomParticipant[]
-    specialPlays    SpecialPlayer[]
-    messages        Message[]
-    playerRewards   PlayerReward[]
-    responses       Response[]
+    rooms                       RoomParticipant[]
+    specialPlays                SpecialPlayer[]
+    messages                    Message[]
+    playerRewards               PlayerReward[]
+    responses                   Response[]
 }
 
 model TriviaTopic {
@@ -74,23 +81,27 @@ model RoomParticipant {
 }
 
 model TriviaSpecial {
-    id              Int             @id @default(autoincrement())
-    title           String
-    caption         String
-    description     String?         @db.Text
-    rewardId        Int             @default(1)
-    category        TopicsEnum      @default(all)
-    type            SpecialEnum     @default(DailyChallenge)
-    playersPerRoom  Int             @default(1)
-    avatar          String?
-    status          EventStatus     @default(upcoming)
-    questions       Json?
-    createdAt       DateTime        @default(now())
-    updatedAt       DateTime        @updatedAt
+    id                  Int             @id @default(autoincrement())
+    title               String
+    caption             String
+    shortDescription    String?         @db.Text
+    description         String?         @db.Text
+    rewardId            Int             @default(1)
+    category            TopicsEnum      @default(general)
+    type                SpecialEnum     @default(challenge)
+    dueDate             DateTime?
+    playTime            Int?
+    timePerQuestion     Int?
+    numberOfPlayers     Int             @default(1)
+    avatar              String
+    gameStatus          GameStatus      @default(upcoming)
+    questions           Json?           // The number of questions in the array
+    createdAt           DateTime        @default(now())
+    updatedAt           DateTime        @updatedAt
 
-    reward          TriviaReward    @relation(fields: [rewardId], references: [id])
-    participants    SpecialPlayer[]
-    specialRooms    SpecialRoom[]
+    reward              TriviaReward    @relation(fields: [rewardId], references: [id])
+    participants        SpecialPlayer[]
+    specialRooms        SpecialRoom[]
 }
 
 model SpecialRoom {
@@ -149,7 +160,7 @@ model Question {
     text                String
     options             Json
     answer              String
-    level               PlayerLevel    @default(rookie)
+    level               PlayerLevel    @default(trivia_rookie)
     category            TopicsEnum     @default(all)
 
     responses           Response[]
@@ -187,10 +198,10 @@ model Message {
 }
 
 enum PlayerLevel {
-    rookie
+    trivia_rookie
     trivia_ace
-    expert
-    guru
+    trivia_expert
+    trivia_guru
     mastermind
     grand_trivia_maestro
 }
@@ -219,18 +230,12 @@ enum TopicsEnum {
 }
 
 enum SpecialEnum {
-    // Personal challenges
-    DailyChallenge
-    RaceAgainstTimeChallenge
-    WinRushCoinsTrivia
-    // Competitive
-    FastestTimeChallenge
-    // Multiplayer challenge
-    AllTopicsChallenge
-    WeeklyTriviaDraw
+    challenge
+    room
+    tournament
 }
 
-enum EventStatus {
+enum GameStatus {
     upcoming
     open
     closed

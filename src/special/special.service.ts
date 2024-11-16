@@ -11,6 +11,9 @@ export class SpecialService {
     ): Promise<TriviaSpecial | null> {
         return this.prisma.triviaSpecial.findUnique({
             where: specialTriviaWhereUniqueInput,
+            include: {
+                reward: true,
+            },
         });
     }
 
@@ -28,6 +31,9 @@ export class SpecialService {
             cursor,
             where,
             orderBy,
+            include: {
+                reward: true,
+            },
         });
     }
 
