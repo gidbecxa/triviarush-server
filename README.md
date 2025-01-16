@@ -1,73 +1,65 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+Here's a simple **README** for your project based on our discussions:  
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+---
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+# **TriviaRush**  
 
-## Description
+**TriviaRush** is a real-time multiplayer trivia game where players compete against real opponents in different categories. The game features duo-player mode, customizable game settings, and a social component where players can add game pals for frequent challenges.  
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## **Key Features**  
 
-## Installation
+- 🎮 **Real-Time Multiplayer:** Play against real players in different trivia categories.  
+- 🔄 **Dynamic Questions:** Questions are served in real-time with response time tracking.  
+- ⚡ **Performance Tracking:** Players’ scores and response times are recorded and updated in real-time via WebSockets.  
+- 🎨 **Customizable Settings:** Players can adjust game preferences, including sound settings, notifications, and language.  
+- 🤝 **Social Play:** Add game pals and challenge them in duo-player mode.  
+- 🔒 **Security Features:** Manage account security settings, including 2FA and multi-device login.  
+- 🎵 **Sound Customization:** Enable/disable game music and sound effects and choose preferred background music styles.  
 
-```bash
-$ pnpm install
-```
+## **Technology Stack**  
 
-## Running the app
+- **Frontend:** React Native (Expo 51) with NativeWind and Expo Router 3.5  
+- **Backend:** Node.js with NestJS and Prisma  
+- **Database:** PostgreSQL with JSON-based user settings storage  
+- **Real-Time Communication:** WebSockets for multiplayer game sync  
+- **Storage:** Supabase for media storage  
+- **Authentication & Security:** SecureStore for local settings, 2FA (coming soon)  
 
-```bash
-# development
-$ pnpm run start
+## **Game Flow**  
 
-# watch mode
-$ pnpm run start:dev
+1. Players join or create a trivia game room.  
+2. Questions are served, and response time is tracked.  
+3. Scores are updated and emitted via WebSockets.  
+4. The leading player is displayed dynamically.  
+5. The winner is determined at the end of the game.  
 
-# production mode
-$ pnpm run start:prod
-```
+## **How to Run the Project**  
 
-## Test
+1. Clone the repository:  
+   ```bash
+   git clone https://github.com/yourusername/triviarush.git
+   cd triviarush
+   ```
+2. Install dependencies:  
+   ```bash
+   npm install
+   ```  
+3. Start the frontend:  
+   ```bash
+   expo start
+   ```  
+4. Start the backend:  
+   ```bash
+   npm run start:dev
+   ```  
 
-```bash
-# unit tests
-$ pnpm run test
+## **Upcoming Features**  
 
-# e2e tests
-$ pnpm run test:e2e
+- 🎭 Special game modes  
+- 📊 In-depth stats and leaderboards  
+- 🏆 Player achievements and rewards  
+- 📅 Daily and weekly challenges  
 
-# test coverage
-$ pnpm run test:cov
-```
+---
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+This README gives a clear and structured overview of the game. Let me know if you want any modifications! 🚀
