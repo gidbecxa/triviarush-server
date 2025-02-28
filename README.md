@@ -1,7 +1,3 @@
-Here's a simple **README** for your project based on our discussions:  
-
----
-
 # **TriviaRush**  
 
 **TriviaRush** is a real-time multiplayer trivia game where players compete against real opponents in different categories. The game features duo-player mode, customizable game settings, and a social component where players can add game pals for frequent challenges.  
